@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="mysql,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="Cardinality指标，该值表示索引中唯一值的估计数目，理想情况下该值除以表行数应该尽可能接近1，否则表示该列选择性太低而应该考虑删除该索引。 对Cardinality的统计是使用采样方式进行估算的，当表的修改数目超过总记录的1/16、或者修改总次数超过20亿次，则会随机选择8个数据页重新统计该值，不过通过ANALYZE TABLE命令可以强制让数据库重新收集相关的统计信息。 覆盖索引表示直接">
+<meta name="keywords" content="mysql">
+<meta property="og:type" content="article">
+<meta property="og:title" content="索引优化原则">
+<meta property="og:url" content="http://yoursite.com/2018/03/24/索引优化原则/index.html">
+<meta property="og:site_name" content="技术琐活">
+<meta property="og:description" content="Cardinality指标，该值表示索引中唯一值的估计数目，理想情况下该值除以表行数应该尽可能接近1，否则表示该列选择性太低而应该考虑删除该索引。 对Cardinality的统计是使用采样方式进行估算的，当表的修改数目超过总记录的1/16、或者修改总次数超过20亿次，则会随机选择8个数据页重新统计该值，不过通过ANALYZE TABLE命令可以强制让数据库重新收集相关的统计信息。 覆盖索引表示直接">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-03-24T15:12:40.664Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="索引优化原则">
+<meta name="twitter:description" content="Cardinality指标，该值表示索引中唯一值的估计数目，理想情况下该值除以表行数应该尽可能接近1，否则表示该列选择性太低而应该考虑删除该索引。 对Cardinality的统计是使用采样方式进行估算的，当表的修改数目超过总记录的1/16、或者修改总次数超过20亿次，则会随机选择8个数据页重新统计该值，不过通过ANALYZE TABLE命令可以强制让数据库重新收集相关的统计信息。 覆盖索引表示直接">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/03/24/索引优化原则/">
+
+
+
+
+
+  <title>索引优化原则 | 技术琐活</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">技术琐活</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/24/索引优化原则/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peter">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/myphoto.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="技术琐活">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">索引优化原则</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-03-24T20:42:50+08:00">
+                2018-03-24
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据库/" itemprop="url" rel="index">
+                    <span itemprop="name">数据库</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Cardinality指标，该值表示索引中唯一值的估计数目，理想情况下该值除以表行数应该尽可能接近1，否则表示该列选择性太低而应该考虑删除该索引。 对Cardinality的统计是使用采样方式进行估算的，当表的修改数目超过总记录的1/16、或者修改总次数超过20亿次，则会随机选择8个数据页重新统计该值，不过通过ANALYZE TABLE命令可以强制让数据库重新收集相关的统计信息。</p>
+<p>覆盖索引<br>表示直接从辅助索引中就可以得到需要的查询记录，而不需要再从聚簇索引中查询行记录。使用覆盖索引的好处是辅助索引不包含整行记录，所以索引大小会远远小于聚簇索引，单个索引页就可以存储更多的索引项，那么访问索引本身的操作就可以减少顺序IO操作了。</p>
+<h2 id="索引使用的地方和值得优化的地方"><a href="#索引使用的地方和值得优化的地方" class="headerlink" title="索引使用的地方和值得优化的地方"></a>索引使用的地方和值得优化的地方</h2><ol>
+<li>where</li>
+<li>order by<br> 不给order by加索引，就需要mysql server层自己去排序，explain Extra会得到using filesort 当使用排序的空间超过sort_buffer_size的时候，会使用临时表，explain Extra会得到using temporary</li>
+<li>group by<br> group by 操作在没有合适的索引可用的时候，通常先扫描整个表提取数据并创建一个临时表，然后按照group by 指定的列进行排序.在explain中通常可以看到 <code>using temporary</code>; <code>using filesort</code></li>
+<li>join on 多表关联时，要保证关联字段上一定有索引<br> 通常两表关联，数量少的表为驱动表。从驱动表中取出R1匹配S表所有列，然后R2，R3,直到将R表中的所有数据匹配完，然后合并数据，可以看到这种算法要对S表进行RN次访问，虽然简单，但是相对来说开销还是太大了</li>
+</ol>
+<ul>
+<li><h3 id="不要过度索引。"><a href="#不要过度索引。" class="headerlink" title="不要过度索引。"></a>不要过度索引。</h3>  索引需要额外的磁盘空间，并降低写操作的性能。在修改表内容的时候，索引会进行更新甚至重构，索引列越多，这个时间就会越长。所以只保持需要的索引有利于查询即可。</li>
+<li><h3 id="更新十分频繁字段上不宜建立索引"><a href="#更新十分频繁字段上不宜建立索引" class="headerlink" title="更新十分频繁字段上不宜建立索引"></a>更新十分频繁字段上不宜建立索引</h3><p>  更新会变更 B+ 树，重建索引。这个过程是十分消耗数据库性能的。</p>
+</li>
+<li><h3 id="数据区分度不高的字段上不宜建立索引"><a href="#数据区分度不高的字段上不宜建立索引" class="headerlink" title="数据区分度不高的字段上不宜建立索引"></a>数据区分度不高的字段上不宜建立索引</h3><p>  区分度可以使用 <code>count(distinct(列名))/count(*)</code>来计算。比例越大我们扫描的记录数越少，唯一键的区分度是1<br>  一般区分度在80%以上的时候就可以建立索引。<br>  如果返回数据的比例在30%以上(大概)的情况下，优化器不会选择使用索引。</p>
+</li>
+<li><h3 id="使用短索引"><a href="#使用短索引" class="headerlink" title="使用短索引"></a>使用短索引</h3><p>  如果对长字符串列进行索引，应该指定一个前缀长度，这样能够节省大量索引空间；</p>
+</li>
+<li><h3 id="前导模糊查询不能命中索引。"><a href="#前导模糊查询不能命中索引。" class="headerlink" title="前导模糊查询不能命中索引。"></a>前导模糊查询不能命中索引。</h3></li>
+<li><h3 id="数据类型出现隐式转换的时候不会命中索引"><a href="#数据类型出现隐式转换的时候不会命中索引" class="headerlink" title="数据类型出现隐式转换的时候不会命中索引"></a>数据类型出现隐式转换的时候不会命中索引</h3>  特别是当列类型是字符串，一定要将字符常量值用引号引起来。</li>
+<li><h3 id="最左前缀匹配原则"><a href="#最左前缀匹配原则" class="headerlink" title="最左前缀匹配原则"></a>最左前缀匹配原则</h3>  复合索引的情况下，查询条件不包含索引列最左边部分，不会命中复合索引。</li>
+<li><h3 id="用or分割开的条件，"><a href="#用or分割开的条件，" class="headerlink" title="用or分割开的条件，"></a>用or分割开的条件，</h3>  如果or前的条件中列有索引，而后面的列中没有索引，那么涉及到的索引都不会被用到。</li>
+<li><h3 id="负向条件查询不能使用索引，可以优化为in查询。"><a href="#负向条件查询不能使用索引，可以优化为in查询。" class="headerlink" title="负向条件查询不能使用索引，可以优化为in查询。"></a>负向条件查询不能使用索引，可以优化为in查询。</h3>  负向条件有：!=、&lt;&gt;、not in、not exists、not like等。</li>
+<li><h3 id="范围条件查询可以命中索引。"><a href="#范围条件查询可以命中索引。" class="headerlink" title="范围条件查询可以命中索引。"></a>范围条件查询可以命中索引。</h3>  范围条件有：&lt;、&lt;=、&gt;、&gt;=、between等。<br>  但是范围列后面的列无法用到索引，<br>  索引最多用于一个范围列，如果查询条件中有两个范围列则无法全用到索引：</li>
+<li><h3 id="索引列上不能使用表达式或函数"><a href="#索引列上不能使用表达式或函数" class="headerlink" title="索引列上不能使用表达式或函数"></a>索引列上不能使用表达式或函数</h3>  如：<br>  <code>EXPLAIN SELECT * FROM user WHERE age+1&gt;24;</code></li>
+<li><h3 id="建立索引的列，不允许为null。"><a href="#建立索引的列，不允许为null。" class="headerlink" title="建立索引的列，不允许为null。"></a>建立索引的列，不允许为null。</h3>  单列索引不存null值，复合索引不存全为null的值，如果列允许为null，可能会得到“不符合预期”的结果集，所以，请使用not null约束以及默认值。<br>  <code>SELECT * FROM user WHERE remark IS NOT NULL;</code>则不会命中索引</li>
+</ul>
+<h2 id="Explain性能分析"><a href="#Explain性能分析" class="headerlink" title="Explain性能分析"></a>Explain性能分析</h2>
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/03/22/mysql索引原理及设计/" rel="next" title="mysql索引原理及设计">
+                <i class="fa fa-chevron-left"></i> mysql索引原理及设计
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/myphoto.jpeg" alt="Peter">
+            
+              <p class="site-author-name" itemprop="name">Peter</p>
+              <p class="site-description motion-element" itemprop="description">phper|文艺青年</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:wp178123@alibaba-inc.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#索引使用的地方和值得优化的地方"><span class="nav-number">1.</span> <span class="nav-text">索引使用的地方和值得优化的地方</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#不要过度索引。"><span class="nav-number">1.1.</span> <span class="nav-text">不要过度索引。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#更新十分频繁字段上不宜建立索引"><span class="nav-number">1.2.</span> <span class="nav-text">更新十分频繁字段上不宜建立索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据区分度不高的字段上不宜建立索引"><span class="nav-number">1.3.</span> <span class="nav-text">数据区分度不高的字段上不宜建立索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用短索引"><span class="nav-number">1.4.</span> <span class="nav-text">使用短索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#前导模糊查询不能命中索引。"><span class="nav-number">1.5.</span> <span class="nav-text">前导模糊查询不能命中索引。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据类型出现隐式转换的时候不会命中索引"><span class="nav-number">1.6.</span> <span class="nav-text">数据类型出现隐式转换的时候不会命中索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#最左前缀匹配原则"><span class="nav-number">1.7.</span> <span class="nav-text">最左前缀匹配原则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#用or分割开的条件，"><span class="nav-number">1.8.</span> <span class="nav-text">用or分割开的条件，</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#负向条件查询不能使用索引，可以优化为in查询。"><span class="nav-number">1.9.</span> <span class="nav-text">负向条件查询不能使用索引，可以优化为in查询。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#范围条件查询可以命中索引。"><span class="nav-number">1.10.</span> <span class="nav-text">范围条件查询可以命中索引。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#索引列上不能使用表达式或函数"><span class="nav-number">1.11.</span> <span class="nav-text">索引列上不能使用表达式或函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#建立索引的列，不允许为null。"><span class="nav-number">1.12.</span> <span class="nav-text">建立索引的列，不允许为null。</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Explain性能分析"><span class="nav-number">2.</span> <span class="nav-text">Explain性能分析</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2015 &mdash; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peter</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

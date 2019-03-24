@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.8.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="mysql,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="MySQL的存储引擎是插件式的，数据库的锁是和存储引擎相关的，本文讨论的锁都是InnoDB存储引擎的锁 mysql锁分类按加锁机制分 乐观锁假设不会发生并发冲突，在数据进行提交更新的时候，才会正式对数据的冲突与否进行检测。  悲观锁悲观锁的特点是先获取锁，再进行业务操作，即“悲观”的认为获取锁是非常有可能失败的，因此要先确保获取锁成功再进行业务操作   按模式性分 共享锁（Shared Lock）">
+<meta name="keywords" content="mysql">
+<meta property="og:type" content="article">
+<meta property="og:title" content="当我们谈论锁时我们到底在谈论什么">
+<meta property="og:url" content="http://yoursite.com/2017/03/19/当我们谈论锁时我们到底在谈论什么/index.html">
+<meta property="og:site_name" content="技术琐活">
+<meta property="og:description" content="MySQL的存储引擎是插件式的，数据库的锁是和存储引擎相关的，本文讨论的锁都是InnoDB存储引擎的锁 mysql锁分类按加锁机制分 乐观锁假设不会发生并发冲突，在数据进行提交更新的时候，才会正式对数据的冲突与否进行检测。  悲观锁悲观锁的特点是先获取锁，再进行业务操作，即“悲观”的认为获取锁是非常有可能失败的，因此要先确保获取锁成功再进行业务操作   按模式性分 共享锁（Shared Lock）">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2019-03-23T02:53:06.965Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="当我们谈论锁时我们到底在谈论什么">
+<meta name="twitter:description" content="MySQL的存储引擎是插件式的，数据库的锁是和存储引擎相关的，本文讨论的锁都是InnoDB存储引擎的锁 mysql锁分类按加锁机制分 乐观锁假设不会发生并发冲突，在数据进行提交更新的时候，才会正式对数据的冲突与否进行检测。  悲观锁悲观锁的特点是先获取锁，再进行业务操作，即“悲观”的认为获取锁是非常有可能失败的，因此要先确保获取锁成功再进行业务操作   按模式性分 共享锁（Shared Lock）">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/03/19/当我们谈论锁时我们到底在谈论什么/">
+
+
+
+
+
+  <title>当我们谈论锁时我们到底在谈论什么 | 技术琐活</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">技术琐活</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br>
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/19/当我们谈论锁时我们到底在谈论什么/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Peter">
+      <meta itemprop="description" content>
+      <meta itemprop="image" content="/images/myphoto.jpeg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="技术琐活">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">当我们谈论锁时我们到底在谈论什么</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-03-19T13:08:49+08:00">
+                2017-03-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/数据库/" itemprop="url" rel="index">
+                    <span itemprop="name">数据库</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>MySQL的存储引擎是插件式的，数据库的锁是和存储引擎相关的，本文讨论的锁都是InnoDB存储引擎的锁</p>
+<h1 id="mysql锁分类"><a href="#mysql锁分类" class="headerlink" title="mysql锁分类"></a>mysql锁分类</h1><h2 id="按加锁机制分"><a href="#按加锁机制分" class="headerlink" title="按加锁机制分"></a>按加锁机制分</h2><ol>
+<li><p>乐观锁<br>假设不会发生并发冲突，在数据进行提交更新的时候，才会正式对数据的冲突与否进行检测。</p>
+</li>
+<li><p>悲观锁<br>悲观锁的特点是先获取锁，再进行业务操作，即“悲观”的认为获取锁是非常有可能失败的，因此要先确保获取锁成功再进行业务操作</p>
+</li>
+</ol>
+<h2 id="按模式性分"><a href="#按模式性分" class="headerlink" title="按模式性分"></a>按模式性分</h2><ol>
+<li>共享锁（Shared Lock），也叫读锁，简称<code>S</code>锁</li>
+<li>排他锁（Exclusive Lock），也叫写锁，互斥锁，简称<code>X</code>锁</li>
+</ol>
+<h4 id="兼容性如图："><a href="#兼容性如图：" class="headerlink" title="兼容性如图："></a>兼容性如图：</h4><table>
+<thead>
+<tr>
+<th></th>
+<th>S</th>
+<th>X</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S</td>
+<td>是</td>
+<td>否</td>
+</tr>
+<tr>
+<td>X</td>
+<td>否</td>
+<td>否</td>
+</tr>
+</tbody>
+</table>
+<p>假设目前有T1，T2两个事务以及数据行R, 此时T1持有R上的S锁：</p>
+<ol>
+<li>T2请求R上的S锁，T2立即获得S锁。T1和T2同时都持有R上的S锁。</li>
+<li>T2请求R上的X锁，T2无法获得X锁。T2必须要等待直到T1释放R上的S锁。</li>
+</ol>
+<p>假设目前有T1，T2两个事务以及数据行R, 此时T1持有R上的X锁：</p>
+<ol>
+<li>T2请求R上的任何类型的锁时，T2都无法获得锁.此时，T2必须要等待直到T1释放R上的X锁</li>
+</ol>
+<p><code>注</code>它们并不是一种具体类型的锁，而是其他各种锁的模式，用于修饰其它锁，每种锁都有Shared或exclusive两种模式。</p>
+<h2 id="按锁粒度分"><a href="#按锁粒度分" class="headerlink" title="按锁粒度分"></a>按锁粒度分</h2><h3 id="行锁"><a href="#行锁" class="headerlink" title="行锁"></a>行锁</h3><h4 id="1-记录锁（Record-Locks）"><a href="#1-记录锁（Record-Locks）" class="headerlink" title="1. 记录锁（Record Locks）"></a>1. 记录锁（Record Locks）</h4><p>也就是所谓的行锁，总是锁定<code>索引记录</code>而不是行数据，即使表上并未定义索引。有shard或exclusive两种模式。<br>如果表未定义索引时，InnoDB自动创建隐藏的聚集索引，使用该索引执行record lock。</p>
+<h3 id="表锁"><a href="#表锁" class="headerlink" title="表锁"></a>表锁</h3><h4 id="1-意向锁（Intention-Locks）"><a href="#1-意向锁（Intention-Locks）" class="headerlink" title="1. 意向锁（Intention Locks）"></a>1. 意向锁（Intention Locks）</h4><p>InnoDB 支持多粒度锁机制（multiple granularity locking），它允许行级锁与表级锁共存。这一机制实现就是<code>意向锁</code>。意向锁是一种<code>表级锁</code>，它指示事务稍后在某个行上加锁（shared or exclusive).</p>
+<ul>
+<li>意向锁有两种模式，分别是：IS或IX。</li>
+</ul>
+<p>意向锁的协议要求：</p>
+<ol>
+<li>事务在获取行上的S锁之前，事务必须首先获取表上的IS锁或表上的更强的锁。</li>
+<li>事务在获取行上的X锁之前，事务必须首先获取表上的IX锁。</li>
+</ol>
+<p>即：在为数据行加行锁之前，InooDB 会先获取该数据行所在在数据表的对应意向锁。<code>意向锁是有数据引擎自己维护的，用户无法手动操作意向锁</code>.</p>
+<h4 id="表级锁兼容性："><a href="#表级锁兼容性：" class="headerlink" title="表级锁兼容性："></a>表级锁兼容性：</h4><table>
+<thead>
+<tr>
+<th></th>
+<th>X</th>
+<th>IX</th>
+<th>S</th>
+<th>IS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>X</td>
+<td>否</td>
+<td>否</td>
+<td>否</td>
+<td>否</td>
+</tr>
+<tr>
+<td>IX</td>
+<td>否</td>
+<td>是</td>
+<td>否</td>
+<td>是</td>
+</tr>
+<tr>
+<td>S</td>
+<td>否</td>
+<td>否</td>
+<td>是</td>
+<td>是</td>
+</tr>
+<tr>
+<td>IS</td>
+<td>否</td>
+<td>是</td>
+<td>是</td>
+<td>是</td>
+</tr>
+</tbody>
+</table>
+<p><code>注意</code>：意向锁IS和IX和任何行锁都兼容（上面的S和X都指的是表上的锁）。</p>
+<p>意向锁只会阻塞全表请求（例如：LOCK TABLES … WRITE），意向锁的主要目的是证明有事务锁定一行,或者打算去锁表中的一行。举一个例子：假如没有意向锁，如果一个事务想<br>要获取某张表TB上的X锁，那么它不得不遍历TB上的每一个数据行做检查，看是否某个行的锁与自己既然请求的锁X之间有冲突.这种的判断方法效率实在不高，因为需要遍历整个表。</p>
+<h4 id="2-自增锁-AUTO-INC-Locks"><a href="#2-自增锁-AUTO-INC-Locks" class="headerlink" title="2. 自增锁(AUTO-INC Locks)"></a>2. 自增锁(AUTO-INC Locks)</h4><p>表级锁。向带有AUTO_INCREMENT列的表时插入数据行时，事务需要首先获取到该表的AUTO-INC表级锁，以便可以生成连续的自增值。插入语句开始时请求该锁，插入语句结束后释放该锁（注意：是语句结束后，而不是事务结束后）。</p>
+<h3 id="其它"><a href="#其它" class="headerlink" title="其它"></a>其它</h3><h4 id="1-间隙锁（Gap-Locks"><a href="#1-间隙锁（Gap-Locks" class="headerlink" title="1. 间隙锁（Gap Locks)"></a>1. 间隙锁（Gap Locks)</h4><p>索引记录之间的间隙上的锁，锁定尚未存在的记录，即索引记录之间的间隙。间隙锁锁住的间隙可以是第一个索引记录前面的间隙，或相邻两条索引记录之间的间隙，或最后一个索引记录后面的间隙。</p>
+<p>间隙锁可以共存(co-exist)。shared或exclusive两种模式并没有区别。事务T1持有某个间隙上的gap lock并不能阻止事务T2同时持有同一个间隙上的gap lock</p>
+<ul>
+<li>间隙锁存在的唯一目的就是阻止其他事务向gap中插入数据行，结合record lock在隔离级别为RR时，阻止幻影行(phantom row)的产生；隔离级别为RC时，搜索和索引扫描时，gap lock是被禁用的，只在 外键约束检查 和 重复key检查时gap lock才有效，正是因为此，RC时会有幻影行问题。</li>
+</ul>
+<h4 id="2-Next-key-lock"><a href="#2-Next-key-lock" class="headerlink" title="2. Next-key lock"></a>2. Next-key lock</h4><p>next-key lock = 记录锁（Record Locks） + 间隙锁（Gap Locks)。<br>它锁定索引记录以及该索引记录前后的间隙。</p>
+<h4 id="3-插入意向锁（-Insert-Intention-Locks）"><a href="#3-插入意向锁（-Insert-Intention-Locks）" class="headerlink" title="3. 插入意向锁（(Insert Intention Locks）"></a>3. 插入意向锁（(Insert Intention Locks）</h4><p>一种特殊的间隙锁间隙锁gap lock。INSERT在插入行之前，INSERT操作会首先在索引记录之间的间隙上设置insert intention lock，该锁的范围是(插入值, 向下的一个索引值)。操作插入成功后，会在新插入的行上设置record lock。</p>
+<p>插入意向锁这种方式的意图：多个事务向同一个index gap并发进行插入时，多个事务无需相互等待。</p>
+<p>如果gap lock或next-key lock 与 insert intention lock 的范围重叠了，则gap lock或next-key lock会阻塞insert intention lock。隔离级别为RR时正是利用此特性来解决phantom row问题；尽管insert intention lock也是一种特殊的gap lock，但它和普通的gap lock不同，insert intention lock相互不会阻塞，这极大的提供了插入时的并发性。</p>
+<h4 id="3-空间索引-Predicate-Locks-for-Spatial-Indexes"><a href="#3-空间索引-Predicate-Locks-for-Spatial-Indexes" class="headerlink" title="3.  空间索引(Predicate Locks for Spatial Indexes)"></a>3.  空间索引(Predicate Locks for Spatial Indexes)</h4><p>很少用到，忽略 </p>
+<p>参考： <a href="https://dev.mysql.com/doc/refman/5.7/en/innodb-locking.html" target="_blank" rel="noopener">https://dev.mysql.com/doc/refman/5.7/en/innodb-locking.html</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/mysql/" rel="tag"><i class="fa fa-tag"></i> mysql</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/15/数据库事务详解/" rel="next" title="数据库事务详解">
+                <i class="fa fa-chevron-left"></i> 数据库事务详解
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/04/23/Redis持久化/" rel="prev" title="Redis持久化">
+                Redis持久化 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/images/myphoto.jpeg" alt="Peter">
+            
+              <p class="site-author-name" itemprop="name">Peter</p>
+              <p class="site-description motion-element" itemprop="description">phper|文艺青年</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:wp178123@alibaba-inc.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+            </div>
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#mysql锁分类"><span class="nav-number">1.</span> <span class="nav-text">mysql锁分类</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#按加锁机制分"><span class="nav-number">1.1.</span> <span class="nav-text">按加锁机制分</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#按模式性分"><span class="nav-number">1.2.</span> <span class="nav-text">按模式性分</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#兼容性如图："><span class="nav-number">1.2.0.1.</span> <span class="nav-text">兼容性如图：</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#按锁粒度分"><span class="nav-number">1.3.</span> <span class="nav-text">按锁粒度分</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#行锁"><span class="nav-number">1.3.1.</span> <span class="nav-text">行锁</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-记录锁（Record-Locks）"><span class="nav-number">1.3.1.1.</span> <span class="nav-text">1. 记录锁（Record Locks）</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#表锁"><span class="nav-number">1.3.2.</span> <span class="nav-text">表锁</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-意向锁（Intention-Locks）"><span class="nav-number">1.3.2.1.</span> <span class="nav-text">1. 意向锁（Intention Locks）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#表级锁兼容性："><span class="nav-number">1.3.2.2.</span> <span class="nav-text">表级锁兼容性：</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-自增锁-AUTO-INC-Locks"><span class="nav-number">1.3.2.3.</span> <span class="nav-text">2. 自增锁(AUTO-INC Locks)</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#其它"><span class="nav-number">1.3.3.</span> <span class="nav-text">其它</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-间隙锁（Gap-Locks"><span class="nav-number">1.3.3.1.</span> <span class="nav-text">1. 间隙锁（Gap Locks)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-Next-key-lock"><span class="nav-number">1.3.3.2.</span> <span class="nav-text">2. Next-key lock</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-插入意向锁（-Insert-Intention-Locks）"><span class="nav-number">1.3.3.3.</span> <span class="nav-text">3. 插入意向锁（(Insert Intention Locks）</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-空间索引-Predicate-Locks-for-Spatial-Indexes"><span class="nav-number">1.3.3.4.</span> <span class="nav-text">3.  空间索引(Predicate Locks for Spatial Indexes)</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; 2015 &mdash; <span itemprop="copyrightYear">2019</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Peter</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

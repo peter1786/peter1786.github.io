@@ -79,18 +79,18 @@
 
 
 
-<meta name="description" content="Cardinality指标，该值表示索引中唯一值的估计数目，理想情况下该值除以表行数应该尽可能接近1，否则表示该列选择性太低而应该考虑删除该索引。 对Cardinality的统计是使用采样方式进行估算的，当表的修改数目超过总记录的1/16、或者修改总次数超过20亿次，则会随机选择8个数据页重新统计该值，不过通过ANALYZE TABLE命令可以强制让数据库重新收集相关的统计信息。 覆盖索引表示直接">
+<meta name="description" content="不要过度索引。我们都知道索引可以加快查询速度，那么是不是只要是查询语句需要，就建上索引？答案是否定的。因为索引虽然加快了查询速度，但索引也是有代价的：索引文件本身要消耗存储空间，同时索引会加重插入、删除和修改记录时的负担，另外，MySQL在运行时也要消耗资源维护索引，因此索引并不是越多越好。一般两种情况下不建议建索引。  第一种情况是表记录比较少，例如一两千条甚至只有几百条记录的表，没必要建索引，">
 <meta name="keywords" content="mysql">
 <meta property="og:type" content="article">
 <meta property="og:title" content="索引优化原则">
 <meta property="og:url" content="http://yoursite.com/2018/03/24/索引优化原则/index.html">
 <meta property="og:site_name" content="技术琐活">
-<meta property="og:description" content="Cardinality指标，该值表示索引中唯一值的估计数目，理想情况下该值除以表行数应该尽可能接近1，否则表示该列选择性太低而应该考虑删除该索引。 对Cardinality的统计是使用采样方式进行估算的，当表的修改数目超过总记录的1/16、或者修改总次数超过20亿次，则会随机选择8个数据页重新统计该值，不过通过ANALYZE TABLE命令可以强制让数据库重新收集相关的统计信息。 覆盖索引表示直接">
+<meta property="og:description" content="不要过度索引。我们都知道索引可以加快查询速度，那么是不是只要是查询语句需要，就建上索引？答案是否定的。因为索引虽然加快了查询速度，但索引也是有代价的：索引文件本身要消耗存储空间，同时索引会加重插入、删除和修改记录时的负担，另外，MySQL在运行时也要消耗资源维护索引，因此索引并不是越多越好。一般两种情况下不建议建索引。  第一种情况是表记录比较少，例如一两千条甚至只有几百条记录的表，没必要建索引，">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-03-24T15:12:40.664Z">
+<meta property="og:updated_time" content="2019-03-25T15:03:16.450Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="索引优化原则">
-<meta name="twitter:description" content="Cardinality指标，该值表示索引中唯一值的估计数目，理想情况下该值除以表行数应该尽可能接近1，否则表示该列选择性太低而应该考虑删除该索引。 对Cardinality的统计是使用采样方式进行估算的，当表的修改数目超过总记录的1/16、或者修改总次数超过20亿次，则会随机选择8个数据页重新统计该值，不过通过ANALYZE TABLE命令可以强制让数据库重新收集相关的统计信息。 覆盖索引表示直接">
+<meta name="twitter:description" content="不要过度索引。我们都知道索引可以加快查询速度，那么是不是只要是查询语句需要，就建上索引？答案是否定的。因为索引虽然加快了查询速度，但索引也是有代价的：索引文件本身要消耗存储空间，同时索引会加重插入、删除和修改记录时的负担，另外，MySQL在运行时也要消耗资源维护索引，因此索引并不是越多越好。一般两种情况下不建议建索引。  第一种情况是表记录比较少，例如一两千条甚至只有几百条记录的表，没必要建索引，">
 
 
 
@@ -352,30 +352,41 @@
       
 
       
-        <p>Cardinality指标，该值表示索引中唯一值的估计数目，理想情况下该值除以表行数应该尽可能接近1，否则表示该列选择性太低而应该考虑删除该索引。 对Cardinality的统计是使用采样方式进行估算的，当表的修改数目超过总记录的1/16、或者修改总次数超过20亿次，则会随机选择8个数据页重新统计该值，不过通过ANALYZE TABLE命令可以强制让数据库重新收集相关的统计信息。</p>
-<p>覆盖索引<br>表示直接从辅助索引中就可以得到需要的查询记录，而不需要再从聚簇索引中查询行记录。使用覆盖索引的好处是辅助索引不包含整行记录，所以索引大小会远远小于聚簇索引，单个索引页就可以存储更多的索引项，那么访问索引本身的操作就可以减少顺序IO操作了。</p>
-<h2 id="索引使用的地方和值得优化的地方"><a href="#索引使用的地方和值得优化的地方" class="headerlink" title="索引使用的地方和值得优化的地方"></a>索引使用的地方和值得优化的地方</h2><ol>
+        <h2 id="不要过度索引。"><a href="#不要过度索引。" class="headerlink" title="不要过度索引。"></a>不要过度索引。</h2><p>我们都知道索引可以加快查询速度，那么是不是只要是查询语句需要，就建上索引？答案是否定的。因为索引虽然加快了查询速度，但索引也是有代价的：索引文件本身要消耗存储空间，同时索引会加重插入、删除和修改记录时的负担，另外，MySQL在运行时也要消耗资源维护索引，因此索引并不是越多越好。一般两种情况下不建议建索引。</p>
+<ol>
+<li><p>第一种情况是表记录比较少，例如一两千条甚至只有几百条记录的表，没必要建索引，让查询做全表扫描就好了。至于多少条记录才算多，这个个人有个人的看法，我个人的经验是以2000作为分界线，记录数不超过 2000可以考虑不建索引，超过2000条可以酌情考虑索引。</p>
+</li>
+<li><p>另一种不建议建索引的情况是索引的选择性较低。所谓索引的选择性（Selectivity），是指不重复的索引值（也叫基数，Cardinality）与表记录数（#T）的比值：<br><code>count(distinct(列名))/count(*)</code><br>选择性越高的索引价值越大，比例越大我们扫描的记录数越少，唯一键的区分度是1。 一般区分度在80%以上的时候就可以建立索引。如果返回数据的比例在30%以上(大概)的情况下，优化器不会选择使用索引。</p>
+</li>
+</ol>
+<ul>
+<li>对Cardinality的统计是使用采样方式进行估算的，当表的修改数目超过总记录的1/16、或者修改总次数超过20亿次，则会随机选择8个数据页重新统计该值，不过通过ANALYZE TABLE命令可以强制让数据库重新收集相关的统计信息。</li>
+</ul>
+<h2 id="索引使用的地方"><a href="#索引使用的地方" class="headerlink" title="索引使用的地方"></a>索引使用的地方</h2><ol>
 <li>where</li>
 <li>order by<br> 不给order by加索引，就需要mysql server层自己去排序，explain Extra会得到using filesort 当使用排序的空间超过sort_buffer_size的时候，会使用临时表，explain Extra会得到using temporary</li>
 <li>group by<br> group by 操作在没有合适的索引可用的时候，通常先扫描整个表提取数据并创建一个临时表，然后按照group by 指定的列进行排序.在explain中通常可以看到 <code>using temporary</code>; <code>using filesort</code></li>
 <li>join on 多表关联时，要保证关联字段上一定有索引<br> 通常两表关联，数量少的表为驱动表。从驱动表中取出R1匹配S表所有列，然后R2，R3,直到将R表中的所有数据匹配完，然后合并数据，可以看到这种算法要对S表进行RN次访问，虽然简单，但是相对来说开销还是太大了</li>
 </ol>
-<ul>
-<li><h3 id="不要过度索引。"><a href="#不要过度索引。" class="headerlink" title="不要过度索引。"></a>不要过度索引。</h3>  索引需要额外的磁盘空间，并降低写操作的性能。在修改表内容的时候，索引会进行更新甚至重构，索引列越多，这个时间就会越长。所以只保持需要的索引有利于查询即可。</li>
-<li><h3 id="更新十分频繁字段上不宜建立索引"><a href="#更新十分频繁字段上不宜建立索引" class="headerlink" title="更新十分频繁字段上不宜建立索引"></a>更新十分频繁字段上不宜建立索引</h3><p>  更新会变更 B+ 树，重建索引。这个过程是十分消耗数据库性能的。</p>
+<h2 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h2><ul>
+<li><h4 id="使用一个自增字段作为主键。"><a href="#使用一个自增字段作为主键。" class="headerlink" title="使用一个自增字段作为主键。"></a>使用一个自增字段作为主键。</h4><p>  此场景是针对使用InnoDB存储引擎时. InnoDB使用聚集索引，数据记录本身被存于主索引（一颗B+Tree）的叶子节点上。这就要求同一个叶子节点内（大小为一个内存页或磁盘页）的各条数据记录按主键顺序存放，因此每当有一条新的记录插入时，MySQL会根据其主键将其插入适当的节点和位置，如果页面达到装载因子（InnoDB默认为15/16），则开辟一个新的页（节点）。<br>如果表使用自增主键，那么每次插入新的记录，记录就会顺序添加到当前索引节点的后续位置，当一页写满，就会自动开辟一个新的页。<br>这样就会形成一个紧凑的索引结构，近似顺序填满。由于每次插入时也不需要移动已有数据，因此效率很高，也不会增加很多开销在维护索引上。<br>如果使用非自增主键（如果身份证号或学号等），由于每次插入主键的值近似于随机，因此每次新纪录都要被插到现有索引页得中间某个位置：<br>此时MySQL不得不为了将新记录插到合适位置而移动数据，甚至目标页面可能已经被回写到磁盘上而从缓存中清掉，此时又要从磁盘上读回来，这增加了很多开销，同时频繁的移动、分页操作造成了大量的碎片，得到了不够紧凑的索引结构，后续不得不通过OPTIMIZE TABLE来重建表并优化填充页面。<br>因此，只要可以，请尽量在InnoDB上采用自增字段做主键。</p>
 </li>
-<li><h3 id="数据区分度不高的字段上不宜建立索引"><a href="#数据区分度不高的字段上不宜建立索引" class="headerlink" title="数据区分度不高的字段上不宜建立索引"></a>数据区分度不高的字段上不宜建立索引</h3><p>  区分度可以使用 <code>count(distinct(列名))/count(*)</code>来计算。比例越大我们扫描的记录数越少，唯一键的区分度是1<br>  一般区分度在80%以上的时候就可以建立索引。<br>  如果返回数据的比例在30%以上(大概)的情况下，优化器不会选择使用索引。</p>
+<li><h4 id="更新十分频繁字段上不宜建立索引"><a href="#更新十分频繁字段上不宜建立索引" class="headerlink" title="更新十分频繁字段上不宜建立索引"></a>更新十分频繁字段上不宜建立索引</h4><p>  更新会变更 B+ 树，重建索引。这个过程是十分消耗数据库性能的。</p>
 </li>
-<li><h3 id="使用短索引"><a href="#使用短索引" class="headerlink" title="使用短索引"></a>使用短索引</h3><p>  如果对长字符串列进行索引，应该指定一个前缀长度，这样能够节省大量索引空间；</p>
+<li><h4 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h4>  表示直接从辅助索引中就可以得到需要的查询记录，而不需要再从聚簇索引中查询行记录。使用覆盖索引的好处是辅助索引不包含整行记录，所以索引大小会远远小于聚簇索引，单个索引页就可以存储更多的索引项，那么访问索引本身的操作就可以减少顺序IO操作了。对核心SQL可以做覆盖索引</li>
+<li><h4 id="使用短索引"><a href="#使用短索引" class="headerlink" title="使用短索引"></a>使用短索引</h4>  如果对长字符串列进行索引，应该指定一个前缀长度，这样能够节省大量索引空间；</li>
+<li><h4 id="用or分割开的条件，"><a href="#用or分割开的条件，" class="headerlink" title="用or分割开的条件，"></a>用or分割开的条件，</h4>  如果or前的条件中列有索引，而后面的列中没有索引，那么涉及到的索引都不会被用到。</li>
+<li><h4 id="范围条件查询可以命中索引。"><a href="#范围条件查询可以命中索引。" class="headerlink" title="范围条件查询可以命中索引。"></a>范围条件查询可以命中索引。</h4><p>  范围条件有：<code>&lt;、&lt;=、&gt;、&gt;=、between</code>等。<br>  但是范围列后面的列无法用到索引。 索引最多用于一个范围列，如果查询条件中有两个范围列则无法全用到索引：</p>
 </li>
-<li><h3 id="前导模糊查询不能命中索引。"><a href="#前导模糊查询不能命中索引。" class="headerlink" title="前导模糊查询不能命中索引。"></a>前导模糊查询不能命中索引。</h3></li>
-<li><h3 id="数据类型出现隐式转换的时候不会命中索引"><a href="#数据类型出现隐式转换的时候不会命中索引" class="headerlink" title="数据类型出现隐式转换的时候不会命中索引"></a>数据类型出现隐式转换的时候不会命中索引</h3>  特别是当列类型是字符串，一定要将字符常量值用引号引起来。</li>
-<li><h3 id="最左前缀匹配原则"><a href="#最左前缀匹配原则" class="headerlink" title="最左前缀匹配原则"></a>最左前缀匹配原则</h3>  复合索引的情况下，查询条件不包含索引列最左边部分，不会命中复合索引。</li>
-<li><h3 id="用or分割开的条件，"><a href="#用or分割开的条件，" class="headerlink" title="用or分割开的条件，"></a>用or分割开的条件，</h3>  如果or前的条件中列有索引，而后面的列中没有索引，那么涉及到的索引都不会被用到。</li>
-<li><h3 id="负向条件查询不能使用索引，可以优化为in查询。"><a href="#负向条件查询不能使用索引，可以优化为in查询。" class="headerlink" title="负向条件查询不能使用索引，可以优化为in查询。"></a>负向条件查询不能使用索引，可以优化为in查询。</h3>  负向条件有：!=、&lt;&gt;、not in、not exists、not like等。</li>
-<li><h3 id="范围条件查询可以命中索引。"><a href="#范围条件查询可以命中索引。" class="headerlink" title="范围条件查询可以命中索引。"></a>范围条件查询可以命中索引。</h3>  范围条件有：&lt;、&lt;=、&gt;、&gt;=、between等。<br>  但是范围列后面的列无法用到索引，<br>  索引最多用于一个范围列，如果查询条件中有两个范围列则无法全用到索引：</li>
-<li><h3 id="索引列上不能使用表达式或函数"><a href="#索引列上不能使用表达式或函数" class="headerlink" title="索引列上不能使用表达式或函数"></a>索引列上不能使用表达式或函数</h3>  如：<br>  <code>EXPLAIN SELECT * FROM user WHERE age+1&gt;24;</code></li>
-<li><h3 id="建立索引的列，不允许为null。"><a href="#建立索引的列，不允许为null。" class="headerlink" title="建立索引的列，不允许为null。"></a>建立索引的列，不允许为null。</h3>  单列索引不存null值，复合索引不存全为null的值，如果列允许为null，可能会得到“不符合预期”的结果集，所以，请使用not null约束以及默认值。<br>  <code>SELECT * FROM user WHERE remark IS NOT NULL;</code>则不会命中索引</li>
+<li><h4 id="建立索引的列，不允许为null。"><a href="#建立索引的列，不允许为null。" class="headerlink" title="建立索引的列，不允许为null。"></a>建立索引的列，不允许为null。</h4><p>  单列索引不存null值，复合索引不存全为null的值，如果列允许为null，可能会得到“不符合预期”的结果集，所以，请使用not null约束以及默认值。<br>  <code>SELECT * FROM user WHERE remark IS NOT NULL;</code>则不会命中索引</p>
+</li>
+</ul>
+<h2 id="无法使用索引的情况"><a href="#无法使用索引的情况" class="headerlink" title="无法使用索引的情况"></a>无法使用索引的情况</h2><ul>
+<li><h4 id="索引列上使用表达式或函数"><a href="#索引列上使用表达式或函数" class="headerlink" title="索引列上使用表达式或函数"></a>索引列上使用表达式或函数</h4>  如：<code>EXPLAIN SELECT * FROM user WHERE age+1&gt;24;</code></li>
+<li><h4 id="负向条件查询不能使用索引，可以优化为in查询。"><a href="#负向条件查询不能使用索引，可以优化为in查询。" class="headerlink" title="负向条件查询不能使用索引，可以优化为in查询。"></a>负向条件查询不能使用索引，可以优化为in查询。</h4>  负向条件有：<code>!=、&lt;&gt;、not in、not exists、not like</code>等。</li>
+<li><h4 id="最左前缀匹配原则"><a href="#最左前缀匹配原则" class="headerlink" title="最左前缀匹配原则"></a>最左前缀匹配原则</h4>  复合索引的情况下，查询条件不包含索引列最左边部分，不会命中复合索引。</li>
+<li><h4 id="前缀通配符”-”-“-”等不能命中索引。"><a href="#前缀通配符”-”-“-”等不能命中索引。" class="headerlink" title="前缀通配符”_” “%”等不能命中索引。"></a>前缀通配符”_” “%”等不能命中索引。</h4>  如： <code>like &#39;%xxx&#39;</code>  </li>
+<li><h4 id="字段类型不匹配"><a href="#字段类型不匹配" class="headerlink" title="字段类型不匹配"></a>字段类型不匹配</h4>  特别是当字段类型是字符串，一定要将字符常量值用引号引起来。</li>
 </ul>
 <h2 id="Explain性能分析"><a href="#Explain性能分析" class="headerlink" title="Explain性能分析"></a>Explain性能分析</h2>
       
@@ -559,7 +570,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#索引使用的地方和值得优化的地方"><span class="nav-number">1.</span> <span class="nav-text">索引使用的地方和值得优化的地方</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#不要过度索引。"><span class="nav-number">1.1.</span> <span class="nav-text">不要过度索引。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#更新十分频繁字段上不宜建立索引"><span class="nav-number">1.2.</span> <span class="nav-text">更新十分频繁字段上不宜建立索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据区分度不高的字段上不宜建立索引"><span class="nav-number">1.3.</span> <span class="nav-text">数据区分度不高的字段上不宜建立索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#使用短索引"><span class="nav-number">1.4.</span> <span class="nav-text">使用短索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#前导模糊查询不能命中索引。"><span class="nav-number">1.5.</span> <span class="nav-text">前导模糊查询不能命中索引。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#数据类型出现隐式转换的时候不会命中索引"><span class="nav-number">1.6.</span> <span class="nav-text">数据类型出现隐式转换的时候不会命中索引</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#最左前缀匹配原则"><span class="nav-number">1.7.</span> <span class="nav-text">最左前缀匹配原则</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#用or分割开的条件，"><span class="nav-number">1.8.</span> <span class="nav-text">用or分割开的条件，</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#负向条件查询不能使用索引，可以优化为in查询。"><span class="nav-number">1.9.</span> <span class="nav-text">负向条件查询不能使用索引，可以优化为in查询。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#范围条件查询可以命中索引。"><span class="nav-number">1.10.</span> <span class="nav-text">范围条件查询可以命中索引。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#索引列上不能使用表达式或函数"><span class="nav-number">1.11.</span> <span class="nav-text">索引列上不能使用表达式或函数</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#建立索引的列，不允许为null。"><span class="nav-number">1.12.</span> <span class="nav-text">建立索引的列，不允许为null。</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Explain性能分析"><span class="nav-number">2.</span> <span class="nav-text">Explain性能分析</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#不要过度索引。"><span class="nav-number">1.</span> <span class="nav-text">不要过度索引。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引使用的地方"><span class="nav-number">2.</span> <span class="nav-text">索引使用的地方</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#优化"><span class="nav-number">3.</span> <span class="nav-text">优化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用一个自增字段作为主键。"><span class="nav-number">3.0.1.</span> <span class="nav-text">使用一个自增字段作为主键。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#更新十分频繁字段上不宜建立索引"><span class="nav-number">3.0.2.</span> <span class="nav-text">更新十分频繁字段上不宜建立索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#覆盖索引"><span class="nav-number">3.0.3.</span> <span class="nav-text">覆盖索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用短索引"><span class="nav-number">3.0.4.</span> <span class="nav-text">使用短索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#用or分割开的条件，"><span class="nav-number">3.0.5.</span> <span class="nav-text">用or分割开的条件，</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#范围条件查询可以命中索引。"><span class="nav-number">3.0.6.</span> <span class="nav-text">范围条件查询可以命中索引。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#建立索引的列，不允许为null。"><span class="nav-number">3.0.7.</span> <span class="nav-text">建立索引的列，不允许为null。</span></a></li></ol></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#无法使用索引的情况"><span class="nav-number">4.</span> <span class="nav-text">无法使用索引的情况</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#索引列上使用表达式或函数"><span class="nav-number">4.0.1.</span> <span class="nav-text">索引列上使用表达式或函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#负向条件查询不能使用索引，可以优化为in查询。"><span class="nav-number">4.0.2.</span> <span class="nav-text">负向条件查询不能使用索引，可以优化为in查询。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#最左前缀匹配原则"><span class="nav-number">4.0.3.</span> <span class="nav-text">最左前缀匹配原则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#前缀通配符”-”-“-”等不能命中索引。"><span class="nav-number">4.0.4.</span> <span class="nav-text">前缀通配符”_” “%”等不能命中索引。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#字段类型不匹配"><span class="nav-number">4.0.5.</span> <span class="nav-text">字段类型不匹配</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Explain性能分析"><span class="nav-number">5.</span> <span class="nav-text">Explain性能分析</span></a></li></div>
             
 
           </div>

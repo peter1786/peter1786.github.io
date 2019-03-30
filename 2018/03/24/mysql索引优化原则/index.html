@@ -82,14 +82,14 @@
 <meta name="description" content="不要过度索引。我们都知道索引可以加快查询速度，那么是不是只要是查询语句需要，就建上索引？答案是否定的。因为索引虽然加快了查询速度，但索引也是有代价的：索引文件本身要消耗存储空间，同时索引会加重插入、删除和修改记录时的负担，另外，MySQL在运行时也要消耗资源维护索引，因此索引并不是越多越好。一般两种情况下不建议建索引。  第一种情况是表记录比较少，例如一两千条甚至只有几百条记录的表，没必要建索引，">
 <meta name="keywords" content="mysql">
 <meta property="og:type" content="article">
-<meta property="og:title" content="索引优化原则">
-<meta property="og:url" content="http://yoursite.com/2018/03/24/索引优化原则/index.html">
+<meta property="og:title" content="mysql索引优化原则">
+<meta property="og:url" content="http://yoursite.com/2018/03/24/mysql索引优化原则/index.html">
 <meta property="og:site_name" content="技术琐活">
 <meta property="og:description" content="不要过度索引。我们都知道索引可以加快查询速度，那么是不是只要是查询语句需要，就建上索引？答案是否定的。因为索引虽然加快了查询速度，但索引也是有代价的：索引文件本身要消耗存储空间，同时索引会加重插入、删除和修改记录时的负担，另外，MySQL在运行时也要消耗资源维护索引，因此索引并不是越多越好。一般两种情况下不建议建索引。  第一种情况是表记录比较少，例如一两千条甚至只有几百条记录的表，没必要建索引，">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2019-03-25T15:03:16.450Z">
+<meta property="og:updated_time" content="2019-03-30T14:46:40.086Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="索引优化原则">
+<meta name="twitter:title" content="mysql索引优化原则">
 <meta name="twitter:description" content="不要过度索引。我们都知道索引可以加快查询速度，那么是不是只要是查询语句需要，就建上索引？答案是否定的。因为索引虽然加快了查询速度，但索引也是有代价的：索引文件本身要消耗存储空间，同时索引会加重插入、删除和修改记录时的负担，另外，MySQL在运行时也要消耗资源维护索引，因此索引并不是越多越好。一般两种情况下不建议建索引。  第一种情况是表记录比较少，例如一两千条甚至只有几百条记录的表，没必要建索引，">
 
 
@@ -120,13 +120,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2018/03/24/索引优化原则/">
+  <link rel="canonical" href="http://yoursite.com/2018/03/24/mysql索引优化原则/">
 
 
 
 
 
-  <title>索引优化原则 | 技术琐活</title>
+  <title>mysql索引优化原则 | 技术琐活</title>
   
 
 
@@ -263,7 +263,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/24/索引优化原则/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/03/24/mysql索引优化原则/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="Peter">
@@ -280,7 +280,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">索引优化原则</h1>
+          <h1 class="post-title" itemprop="name headline">mysql索引优化原则</h1>
         
 
         <div class="post-meta">
@@ -376,10 +376,9 @@
 <li><h4 id="覆盖索引"><a href="#覆盖索引" class="headerlink" title="覆盖索引"></a>覆盖索引</h4>  表示直接从辅助索引中就可以得到需要的查询记录，而不需要再从聚簇索引中查询行记录。使用覆盖索引的好处是辅助索引不包含整行记录，所以索引大小会远远小于聚簇索引，单个索引页就可以存储更多的索引项，那么访问索引本身的操作就可以减少顺序IO操作了。对核心SQL可以做覆盖索引</li>
 <li><h4 id="使用短索引"><a href="#使用短索引" class="headerlink" title="使用短索引"></a>使用短索引</h4>  如果对长字符串列进行索引，应该指定一个前缀长度，这样能够节省大量索引空间；</li>
 <li><h4 id="用or分割开的条件，"><a href="#用or分割开的条件，" class="headerlink" title="用or分割开的条件，"></a>用or分割开的条件，</h4>  如果or前的条件中列有索引，而后面的列中没有索引，那么涉及到的索引都不会被用到。</li>
-<li><h4 id="范围条件查询可以命中索引。"><a href="#范围条件查询可以命中索引。" class="headerlink" title="范围条件查询可以命中索引。"></a>范围条件查询可以命中索引。</h4><p>  范围条件有：<code>&lt;、&lt;=、&gt;、&gt;=、between</code>等。<br>  但是范围列后面的列无法用到索引。 索引最多用于一个范围列，如果查询条件中有两个范围列则无法全用到索引：</p>
-</li>
-<li><h4 id="建立索引的列，不允许为null。"><a href="#建立索引的列，不允许为null。" class="headerlink" title="建立索引的列，不允许为null。"></a>建立索引的列，不允许为null。</h4><p>  单列索引不存null值，复合索引不存全为null的值，如果列允许为null，可能会得到“不符合预期”的结果集，所以，请使用not null约束以及默认值。<br>  <code>SELECT * FROM user WHERE remark IS NOT NULL;</code>则不会命中索引</p>
-</li>
+<li><h4 id="范围条件查询可以命中索引。"><a href="#范围条件查询可以命中索引。" class="headerlink" title="范围条件查询可以命中索引。"></a>范围条件查询可以命中索引。</h4>  范围条件有：<code>&lt;、&lt;=、&gt;、&gt;=、between</code>等。<br>  但是范围列后面的列无法用到索引。 索引最多用于一个范围列，如果查询条件中有两个范围列则无法全用到索引：</li>
+<li><h4 id="索引提示（index-hint"><a href="#索引提示（index-hint" class="headerlink" title="索引提示（index hint)"></a>索引提示（index hint)</h4>  索引提示（Index Hint），显式地告诉优化器使用哪个索引。mysql优化器有了很大的进步，在绝大部分情况下工作得都非常有效和正确。但这并不意味着就不会出现因为错误地选择了某个索引，而导致SQL语句运行的很慢的情况.<br>  USE INDEX 只是告诉优化器可以选择该索引，实际上优化器还是会再根据自己的判断进行选择。如果用户确定指定某个索引来完成查询，那么最可靠的是使用 FORCE INDEX ，而不是 USE INDEX 。</li>
+<li><h4 id="Multi-Range-Read（MRR）优化"><a href="#Multi-Range-Read（MRR）优化" class="headerlink" title="Multi-Range Read（MRR）优化"></a>Multi-Range Read（MRR）优化</h4>  MRR是 MySQL 5.6 版本时引入的新特性，其作用就是将随机访问转化为较为顺序的访问，以达到减少磁盘的随机访问的目的。</li>
 </ul>
 <h2 id="无法使用索引的情况"><a href="#无法使用索引的情况" class="headerlink" title="无法使用索引的情况"></a>无法使用索引的情况</h2><ul>
 <li><h4 id="索引列上使用表达式或函数"><a href="#索引列上使用表达式或函数" class="headerlink" title="索引列上使用表达式或函数"></a>索引列上使用表达式或函数</h4>  如：<code>EXPLAIN SELECT * FROM user WHERE age+1&gt;24;</code></li>
@@ -387,6 +386,7 @@
 <li><h4 id="最左前缀匹配原则"><a href="#最左前缀匹配原则" class="headerlink" title="最左前缀匹配原则"></a>最左前缀匹配原则</h4>  复合索引的情况下，查询条件不包含索引列最左边部分，不会命中复合索引。</li>
 <li><h4 id="前缀通配符”-”-“-”等不能命中索引。"><a href="#前缀通配符”-”-“-”等不能命中索引。" class="headerlink" title="前缀通配符”_” “%”等不能命中索引。"></a>前缀通配符”_” “%”等不能命中索引。</h4>  如： <code>like &#39;%xxx&#39;</code>  </li>
 <li><h4 id="字段类型不匹配"><a href="#字段类型不匹配" class="headerlink" title="字段类型不匹配"></a>字段类型不匹配</h4>  特别是当字段类型是字符串，一定要将字符常量值用引号引起来。</li>
+<li><h4 id="建立索引的列，不允许为null。"><a href="#建立索引的列，不允许为null。" class="headerlink" title="建立索引的列，不允许为null。"></a>建立索引的列，不允许为null。</h4>  单列索引不存null值，复合索引不存全为null的值，如果列允许为null，可能会得到“不符合预期”的结果集，所以，请使用not null约束以及默认值。<br>  <code>SELECT * FROM user WHERE remark IS NOT NULL;</code>则不会命中索引</li>
 </ul>
 <h2 id="Explain性能分析"><a href="#Explain性能分析" class="headerlink" title="Explain性能分析"></a>Explain性能分析</h2>
       
@@ -427,6 +427,10 @@
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/03/29/jvm工作原理/" rel="prev" title="jvm工作原理">
+                jvm工作原理 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -505,7 +509,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-count">9</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -516,7 +520,7 @@
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-count">4</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -527,7 +531,7 @@
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
@@ -570,7 +574,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#不要过度索引。"><span class="nav-number">1.</span> <span class="nav-text">不要过度索引。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引使用的地方"><span class="nav-number">2.</span> <span class="nav-text">索引使用的地方</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#优化"><span class="nav-number">3.</span> <span class="nav-text">优化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用一个自增字段作为主键。"><span class="nav-number">3.0.1.</span> <span class="nav-text">使用一个自增字段作为主键。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#更新十分频繁字段上不宜建立索引"><span class="nav-number">3.0.2.</span> <span class="nav-text">更新十分频繁字段上不宜建立索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#覆盖索引"><span class="nav-number">3.0.3.</span> <span class="nav-text">覆盖索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用短索引"><span class="nav-number">3.0.4.</span> <span class="nav-text">使用短索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#用or分割开的条件，"><span class="nav-number">3.0.5.</span> <span class="nav-text">用or分割开的条件，</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#范围条件查询可以命中索引。"><span class="nav-number">3.0.6.</span> <span class="nav-text">范围条件查询可以命中索引。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#建立索引的列，不允许为null。"><span class="nav-number">3.0.7.</span> <span class="nav-text">建立索引的列，不允许为null。</span></a></li></ol></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#无法使用索引的情况"><span class="nav-number">4.</span> <span class="nav-text">无法使用索引的情况</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#索引列上使用表达式或函数"><span class="nav-number">4.0.1.</span> <span class="nav-text">索引列上使用表达式或函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#负向条件查询不能使用索引，可以优化为in查询。"><span class="nav-number">4.0.2.</span> <span class="nav-text">负向条件查询不能使用索引，可以优化为in查询。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#最左前缀匹配原则"><span class="nav-number">4.0.3.</span> <span class="nav-text">最左前缀匹配原则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#前缀通配符”-”-“-”等不能命中索引。"><span class="nav-number">4.0.4.</span> <span class="nav-text">前缀通配符”_” “%”等不能命中索引。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#字段类型不匹配"><span class="nav-number">4.0.5.</span> <span class="nav-text">字段类型不匹配</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Explain性能分析"><span class="nav-number">5.</span> <span class="nav-text">Explain性能分析</span></a></li></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#不要过度索引。"><span class="nav-number">1.</span> <span class="nav-text">不要过度索引。</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#索引使用的地方"><span class="nav-number">2.</span> <span class="nav-text">索引使用的地方</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#优化"><span class="nav-number">3.</span> <span class="nav-text">优化</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#使用一个自增字段作为主键。"><span class="nav-number">3.0.1.</span> <span class="nav-text">使用一个自增字段作为主键。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#更新十分频繁字段上不宜建立索引"><span class="nav-number">3.0.2.</span> <span class="nav-text">更新十分频繁字段上不宜建立索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#覆盖索引"><span class="nav-number">3.0.3.</span> <span class="nav-text">覆盖索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#使用短索引"><span class="nav-number">3.0.4.</span> <span class="nav-text">使用短索引</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#用or分割开的条件，"><span class="nav-number">3.0.5.</span> <span class="nav-text">用or分割开的条件，</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#范围条件查询可以命中索引。"><span class="nav-number">3.0.6.</span> <span class="nav-text">范围条件查询可以命中索引。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#索引提示（index-hint"><span class="nav-number">3.0.7.</span> <span class="nav-text">索引提示（index hint)</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Multi-Range-Read（MRR）优化"><span class="nav-number">3.0.8.</span> <span class="nav-text">Multi-Range Read（MRR）优化</span></a></li></ol></li></ol><li class="nav-item nav-level-2"><a class="nav-link" href="#无法使用索引的情况"><span class="nav-number">4.</span> <span class="nav-text">无法使用索引的情况</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#索引列上使用表达式或函数"><span class="nav-number">4.0.1.</span> <span class="nav-text">索引列上使用表达式或函数</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#负向条件查询不能使用索引，可以优化为in查询。"><span class="nav-number">4.0.2.</span> <span class="nav-text">负向条件查询不能使用索引，可以优化为in查询。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#最左前缀匹配原则"><span class="nav-number">4.0.3.</span> <span class="nav-text">最左前缀匹配原则</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#前缀通配符”-”-“-”等不能命中索引。"><span class="nav-number">4.0.4.</span> <span class="nav-text">前缀通配符”_” “%”等不能命中索引。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#字段类型不匹配"><span class="nav-number">4.0.5.</span> <span class="nav-text">字段类型不匹配</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#建立索引的列，不允许为null。"><span class="nav-number">4.0.6.</span> <span class="nav-text">建立索引的列，不允许为null。</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Explain性能分析"><span class="nav-number">5.</span> <span class="nav-text">Explain性能分析</span></a></li></div>
             
 
           </div>

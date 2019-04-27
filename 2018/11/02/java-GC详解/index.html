@@ -79,13 +79,13 @@
 
 
 
-<meta name="description" content="Java garbage collection is an automatic process to manage the runtime memory used by programs. By doing it automatic JVM relieves the programmer of the overhead of assigning and freeing up memory reso">
+<meta name="description" content="何为GC？顾名思义,垃圾收集(Garbage Collection)的意思就是 —— 找到垃圾并进行清理。GC是后台的守护进程。它的特别之处是它是一个低优先级进程，但是可以根据内存的使用情况动态的调整他的优先级。因此，它是在内存中低到一定限度时才会自动运行，从而实现对内存的回收。这就是垃圾回收的时间不确定的原因。 为何要这样设计：因为GC也是进程，也要消耗CPU等资源，如果GC执行过于频繁会对ja">
 <meta name="keywords" content="java">
 <meta property="og:type" content="article">
 <meta property="og:title" content="java GC详解">
 <meta property="og:url" content="http://yoursite.com/2018/11/02/java-GC详解/index.html">
 <meta property="og:site_name" content="技术琐活">
-<meta property="og:description" content="Java garbage collection is an automatic process to manage the runtime memory used by programs. By doing it automatic JVM relieves the programmer of the overhead of assigning and freeing up memory reso">
+<meta property="og:description" content="何为GC？顾名思义,垃圾收集(Garbage Collection)的意思就是 —— 找到垃圾并进行清理。GC是后台的守护进程。它的特别之处是它是一个低优先级进程，但是可以根据内存的使用情况动态的调整他的优先级。因此，它是在内存中低到一定限度时才会自动运行，从而实现对内存的回收。这就是垃圾回收的时间不确定的原因。 为何要这样设计：因为GC也是进程，也要消耗CPU等资源，如果GC执行过于频繁会对ja">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://yoursite.com/images/2019/04/12/6428e500-5cd2-11e9-b3e6-9b6b7bdcccd7.png">
 <meta property="og:image" content="http://yoursite.com/images/2019/04/12/b7c7e350-5d09-11e9-b3e6-9b6b7bdcccd7.png">
@@ -103,10 +103,10 @@
 <meta property="og:image" content="http://yoursite.com/images/2019/04/13/572c9120-5df5-11e9-94d6-37a08b4dce14.png">
 <meta property="og:image" content="http://yoursite.com/images/2019/04/14/4c74ddb0-5e76-11e9-9e00-0598c74bdc4f.png">
 <meta property="og:image" content="http://yoursite.com/images/2019/04/14/52f0dea0-5e76-11e9-9e00-0598c74bdc4f.png">
-<meta property="og:updated_time" content="2019-04-25T15:15:38.072Z">
+<meta property="og:updated_time" content="2019-04-27T14:19:09.783Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="java GC详解">
-<meta name="twitter:description" content="Java garbage collection is an automatic process to manage the runtime memory used by programs. By doing it automatic JVM relieves the programmer of the overhead of assigning and freeing up memory reso">
+<meta name="twitter:description" content="何为GC？顾名思义,垃圾收集(Garbage Collection)的意思就是 —— 找到垃圾并进行清理。GC是后台的守护进程。它的特别之处是它是一个低优先级进程，但是可以根据内存的使用情况动态的调整他的优先级。因此，它是在内存中低到一定限度时才会自动运行，从而实现对内存的回收。这就是垃圾回收的时间不确定的原因。 为何要这样设计：因为GC也是进程，也要消耗CPU等资源，如果GC执行过于频繁会对ja">
 <meta name="twitter:image" content="http://yoursite.com/images/2019/04/12/6428e500-5cd2-11e9-b3e6-9b6b7bdcccd7.png">
 
 
@@ -369,11 +369,10 @@
       
 
       
-        <p>Java garbage collection is an automatic process to manage the runtime memory used by programs. By doing it automatic JVM relieves the programmer of the overhead of assigning and freeing up memory resources in a program.<br>java 与 C语言相比的一个优势是，可以通过自己的JVM自动分配和回收内存空间。</p>
-<h1 id="何为GC？"><a href="#何为GC？" class="headerlink" title="何为GC？"></a>何为GC？</h1><p>顾名思义,垃圾收集(Garbage Collection)的意思就是 —— 找到垃圾并进行清理。但现有的垃圾收集实现却恰恰相反: 垃圾收集器跟踪所有正在使用的对象,并把其余部分当做垃圾。<br>GC是后台的守护进程。它的特别之处是它是一个低优先级进程，但是可以根据内存的使用情况动态的调整他的优先级。因此，它是在内存中低到一定限度时才会自动运行，从而实现对内存的回收。这就是垃圾回收的时间不确定的原因。</p>
+        <h1 id="何为GC？"><a href="#何为GC？" class="headerlink" title="何为GC？"></a>何为GC？</h1><p>顾名思义,垃圾收集(Garbage Collection)的意思就是 —— 找到垃圾并进行清理。GC是后台的守护进程。它的特别之处是它是一个低优先级进程，但是可以根据内存的使用情况动态的调整他的优先级。因此，它是在内存中低到一定限度时才会自动运行，从而实现对内存的回收。这就是垃圾回收的时间不确定的原因。</p>
 <p>为何要这样设计：因为GC也是进程，也要消耗CPU等资源，如果GC执行过于频繁会对java的程序的执行产生较大的影响（java解释器本来就不快），因此JVM的设计者们选着了不定期的gc。</p>
-<p> 在JVM的五个内存区域中，有3个是不需要进行垃圾回收的：本地方法栈、程序计数器、虚拟机栈。因为他们的生命周期是和线程同步的，随着线程的销毁，他们占用的内存会自动释放。所以，只有方法区和堆区需要进行垃圾回收，回收的对象就是那些不存在任何引用的对象。</p>
-<p>程序运行期间，所有对象实例存储在运行时数据区域的heap中，当一个对象不再被引用（使用），它就需要被收回。在GC过程中，这些不再被使用的对象从heap中收回，这样就会有空间被循环利用。</p>
+<p>在JVM的五个内存区域中，有3个是不需要进行垃圾回收的：本地方法栈、程序计数器、虚拟机栈。因为他们的生命周期是和线程同步的，随着线程的销毁，他们占用的内存会自动释放。</p>
+<p>程序运行期间，几乎所有对象实例存储在运行时数据区域的heap中，当一个对象不再被引用（使用），它就需要被收回。在GC过程中，这些不再被使用的对象从heap中收回，这样就会有空间被循环利用。</p>
 <h1 id="如何识别垃圾"><a href="#如何识别垃圾" class="headerlink" title="如何识别垃圾"></a>如何识别垃圾</h1><h3 id="​引用计数法"><a href="#​引用计数法" class="headerlink" title="​引用计数法"></a>​引用计数法</h3><p>为每个对象添加一个计数器，当有地方引用该对象时计数器加1，当引用失效时计数器减1。任何引用计数为0的对象可以被当作垃圾收集。</p>
 <p>优点：引用计数收集器执行简单，判定效率高，可以保证对象引用为0时立马得到清理，无不确定性。<br>GC可与应用交替运行，不需要暂停应用即可完成回收功能，实时响应能力比较高</p>
 <p>缺点： 不能单独解决循环引用问题,需要辅助其它算法来解决。实现一个高效率的引用计数 GC 比较困难：在增加/减少对象的引用时，修改引用次数需要原子操作（涉及到加锁），同时在减少一个对象的引用计数时，会级联减少其引用对象的计数</p>
@@ -390,7 +389,7 @@
 <h4 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h4><p><a href="https://www.quora.com/Why-doesnt-Apple-Swift-adopt-the-memory-management-method-of-garbage-collection-like-Java-uses" target="_blank" rel="noopener">https://www.quora.com/Why-doesnt-Apple-Swift-adopt-the-memory-management-method-of-garbage-collection-like-Java-uses</a><br><a href="https://softwareengineering.stackexchange.com/questions/285333/how-does-garbage-collection-compare-to-reference-counting" target="_blank" rel="noopener">https://softwareengineering.stackexchange.com/questions/285333/how-does-garbage-collection-compare-to-reference-counting</a><br><a href="https://www.quora.com/Why-doesnt-Java-use-reference-counting-based-GC" target="_blank" rel="noopener">https://www.quora.com/Why-doesnt-Java-use-reference-counting-based-GC</a></p>
 <h1 id="引用类型"><a href="#引用类型" class="headerlink" title="引用类型"></a>引用类型</h1><p>JVM中将对象的引用分为了四种类型，不同的对象引用类型会造成GC采用不同的方法进行回收：</p>
 <ol>
-<li>强引用：默认情况下，对象采用的均为强引用,GC不会回收</li>
+<li>强引用：默认情况下，对象采用的均为强引用,GC不会回收其内存</li>
 <li>软引用：它用来描述一些可能还有用，但并非必须的对象。在系统内存不够用时，这类引用关联的对象将被垃圾收集器回收。JDK1.2之后提供了SoftReference类来实现软引用。</li>
 <li>弱引用：它也是用来描述非须对象的，但它的强度比软引用更弱些，被弱引用关联的对象只能生存到下一次垃圾收集发生之前。当垃圾收集器工作时，无论当前内存是否足够，都会回收掉只被弱引用关联的对象。在JDK1.2之后，提供了WeakReference类来实现弱引用。</li>
 <li>虚引用：最弱的一种引用关系，完全不会对其生存时间构成影响，也无法通过虚引用来取得一个对象实例。为一个对象设置虚引用关联的唯一目的是希望能在这个对象被收集器回收时收到一个系统通知。JDK1.2之后提供了PhantomReference类来实现虚引用。</li>
@@ -422,14 +421,16 @@
 <p>空的那个存活区用于在下一次年轻代GC时存放收集的对象。年轻代中所有的存活对象(包括Edenq区和非空的那个 “from” 存活区)都会被复制到 ”to“ 存活区。GC过程完成后, ”to“ 区有对象,而 ‘from’ 区里没有对象。两者的角色进行正好切换 。</p>
 <p><img src="/images/2019/04/12/f8e65010-5cff-11e9-b3e6-9b6b7bdcccd7.png" alt="02_05_howjavagcworks.png"></p>
 <p>存活的对象会在两个存活区之间复制多次, 直到某些对象的存活 时间达到一定的阀值。分代理论假设, 存活超过一定时间的对象很可能会继续存活更长时间。</p>
-<p>这类“ 年老” 的对象因此被提升(promoted )到老年代。提升的时候， 存活区的对象不再是复制到另一个存活区,而是迁移到老年代, 并在老年代一直驻留, 直到变为不可达对象。</p>
+<p>这类“ 年老” 的对象因此被提升(promoted )到老年代。提升的时候存活区的对象不再是复制到另一个存活区,而是迁移到老年代, 并在老年代一直驻留, 直到变为不可达对象。</p>
 <p>为了确定一个对象是否“足够老”, 可以被提升(Promotion)到老年代，GC模块跟踪记录每个存活区对象存活的次数。每次分代GC完成后,存活对象的年龄就会增长。当年龄超过提升阈值(tenuring threshold), 就会被提升到老年代区域。</p>
 <p>具体的提升阈值由JVM动态调整,但也可以用参数 -XX:+MaxTenuringThreshold 来指定上限。如果设置 -XX:+MaxTenuringThreshold=0 , 则GC时存活对象不在存活区之间复制，直接提升到老年代。现代 JVM 中这个阈值默认设置为<strong>15个GC周期</strong>。这也是HotSpot中的最大值。</p>
 <p>如果存活区空间不够存放年轻代中的存活对象，提升(Promotion)也可能更早地进行。</p>
 <h3 id="老年代-Old-Generation"><a href="#老年代-Old-Generation" class="headerlink" title="老年代(Old Generation)"></a>老年代(Old Generation)</h3><p>对象如果在年轻代存活了足够长的时间而没有被清理掉（即在几次Young GC后存活了下来），则会被复制到年老代。老年代内存空间通常会更大，能存放更多的对象，在年老代上发生的GC次数也比年轻代少。</p>
 <p>老年代GC发生的频率比年轻代小很多。同时, 因为预期老年代中的对象大部分是存活的, 所以不再使用标记和复制(Mark and Copy)算法。而是采用移动对象的方式来实现最小化内存碎片。老年代空间的清理算法通常是建立在不同的基础上的。原则上,会执行以下这些步骤    </p>
-<p>通过标志位(marked bit),标记所有通过 GC roots 可达的对象.<br>删除所有不可达对象<br>整理老年代空间中的内容，方法是将所有的存活对象复制,从老年代空间开始的地方,依次存放。</p>
-<p>通过上面的描述可知, 老年代GC必须明确地进行整理,以避免内存碎片过多。</p>
+<pre><code>通过标志位(marked bit),标记所有通过 GC roots 可达的对象.
+删除所有不可达对象
+整理老年代空间中的内容，方法是将所有的存活对象复制,从老年代空间开始的地方,依次存放。
+</code></pre><p>通过上面的描述可知, 老年代GC必须明确地进行整理,以避免内存碎片过多。</p>
 <h3 id="永久代-PermGen"><a href="#永久代-PermGen" class="headerlink" title="永久代(PermGen)"></a>永久代(PermGen)</h3><p>在Java 8 之前有一个特殊的空间,称为“永久代”(Permanent Generation)。这是存储元数据(metadata)的地方,比如 class 信息等。此外,这个区域中也保存有其他的数据和信息, 包括 内部化的字符串(internalized strings)等等。实际上这给Java开发者造成了很多麻烦,因为很难去计算这块区域到底需要占用多少内存空间。预测失败导致的结果就是产生 java.lang.OutOfMemoryError: Permgen space 这种形式的错误。除非 ·OutOfMemoryError· 确实是内存泄漏导致的,否则就只能增加 permgen 的大小，例如下面的示例，就是设置 permgen 最大空间为 256 MB:</p>
 <p>java -XX:MaxPermSize=256m com.mycompany.MyApplication</p>
 <h3 id="元数据区-Metaspace"><a href="#元数据区-Metaspace" class="headerlink" title="元数据区(Metaspace)"></a>元数据区(Metaspace)</h3><p>既然估算元数据所需空间那么复杂, Java 8直接删除了永久代(Permanent Generation)，改用 Metaspace。从此以后, Java 中很多杂七杂八的东西都放置到普通的堆内存里。</p>
@@ -520,7 +521,8 @@
 </tr>
 <tr>
 <td>Parallel Scavenge</td>
-<td>CMS -N/A</td>
+<td>CMS</td>
+<td>-N/A</td>
 </tr>
 <tr>
 <td><strong>Parallel New</strong></td>
